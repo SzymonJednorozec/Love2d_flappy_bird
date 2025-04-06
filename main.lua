@@ -12,6 +12,7 @@ local collider = HC.new()
 local player_col 
 local pipe_up_col = {}
 local pipe_down_col = {}
+local bullets_col = {}
 
 local pipe_timer = Timer.new()
 local pipes = {}
@@ -37,6 +38,7 @@ function love.load()
     player = newPlayer()
     enemy = newEnemy()
     player_col = collider:circle(player.pos.x, player.pos.y, player.r)
+    player_col.object_type="player"
     set_timer(pipe_timer)
 end
 
@@ -57,6 +59,7 @@ function love.update(dt)
         for _, b in ipairs(bullets) do b:move(dt) end
         --colliders
         player_col:moveTo(player.pos.x, player.pos.y)
+        move_to_for_bullets()
         move_to_for_pipes()
         checking_player_collisions()
         player_out_of_boundaries()
@@ -86,7 +89,11 @@ end
 function love.keypressed(key, scancode, isrepeat)
     if key == "space" then
         player.jump=true
-        table.insert(bullets,newBullet(player.pos,(mouse - player.pos):normalized()))
+        local new_bullet = newBullet(player.pos:clone(),(mouse - player.pos):normalized())
+        table.insert(bullets,new_bullet)
+        table.insert(bullets_col, collider:circle(new_bullet.pos.x, new_bullet.pos.y, new_bullet.r))
+        bullets_col[1].object_type="bullet"
+
     end
     if key == "right" then
         game.state.running=true
@@ -104,8 +111,10 @@ function love.keypressed(key, scancode, isrepeat)
         pipe_down_col={}
         score=0
 
-        player_col = collider:circle(player.pos.x, player.pos.y, player.r)
+        --todo handling bullets
 
+        player_col = collider:circle(player.pos.x, player.pos.y, player.r)
+        player_col.object_type="player"
 
         pipe_timer = Timer.new()
         set_timer(pipe_timer)
@@ -137,6 +146,12 @@ function move_to_for_pipes()
     end
 end
 
+function move_to_for_bullets()
+    for i = 1, #bullets_col  do
+        bullets_col[i]:moveTo(bullets[i].pos.x,bullets[i].pos.y)
+    end
+end
+
  function pipe_del()
     for i = #pipes, 1, -1 do
         if pipes[i].pos.x < player.pos.x - 25 then
@@ -156,5 +171,7 @@ function set_timer(given_timer)
         table.insert(pipes, new_pipe)
         table.insert(pipe_up_col, collider:rectangle(new_pipe.pos.x - new_pipe.width/2, new_pipe.pos.y - new_pipe.gap/2 - new_pipe.height, new_pipe.width, new_pipe.height))
         table.insert(pipe_down_col, collider:rectangle(new_pipe.pos.x - new_pipe.width/2, new_pipe.pos.y + new_pipe.gap/2, new_pipe.width, new_pipe.height))
+        pipe_up_col[1].object_type="pipe"
+        pipe_down_col[1].object_type="pipe"
     end)
 end

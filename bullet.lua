@@ -4,7 +4,7 @@ local function new(player_pos,direction)
     local offset = 50
     return {
         direction=direction,
-        pos = player_pos + direction * offset,
+        pos = player_pos:clone() + direction * offset,
         r = 10,
         speed = 400,
 
