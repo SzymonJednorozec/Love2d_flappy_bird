@@ -5,6 +5,7 @@ local newPipe = require "pipe"
 local newBullet = require "bullet"
 local Timer = require "timer"
 local newEnemy = require "enemy"
+local newCoin = require "coin"
 
 local HC = require "hc"  
 
@@ -13,13 +14,17 @@ local player_col
 local pipe_up_col = {}
 local pipe_down_col = {}
 local bullets_col = {}
-local enemy_col = {}
+-- local enemy_col = {}
+local coins_col = {}
+
 
 local pipe_timer = Timer.new()
+local tween_timer = Timer.new()
 local pipes = {}
 local bullets = {}
 local player
 local enemies={}
+local coins={}
 local score=0
 
 
@@ -47,6 +52,7 @@ function love.update(dt)
     if game.state.running then
         --Timer
         pipe_timer:update(dt)
+        tween_timer:update(dt)
         --Pipes
         for _,p in ipairs(pipes) do p:move(dt) end
         pipe_del()
@@ -54,16 +60,17 @@ function love.update(dt)
         local mx, my = love.mouse.getPosition()
         mouse = Vector(mx,my)
         player:move(mouse,dt)
-        --enemies
+        --enemies bullets coins
         for _, e in ipairs(enemies) do e:move(player.pos,dt) end
-        --bullets
         for _, b in ipairs(bullets) do b:move(dt) end
+        for _, c in ipairs(coins) do c:move(dt) end
+
         --colliders
         player_col:moveTo(player.pos.x, player.pos.y)
         move_to_for_bullets()
-        move_to_for_enemies()
+        -- move_to_for_enemies()
         move_to_for_pipes()
-        checking_player_collisions()
+        checking_all_collisions()
         player_out_of_boundaries()
         bullets_out_of_boundaries()
         destroy_enemy_if_dead()
@@ -88,7 +95,7 @@ function love.draw()
         for _, p in ipairs(pipes) do p:draw() end
     end
 end
------------------------------------------------
+-----------------------------------------------functions
 
 function love.keypressed(key, scancode, isrepeat)
     if key == "space" then
@@ -123,11 +130,11 @@ function reset_everything()
     pipe_up_col={}
     pipe_down_col={}
 
-    for i = 1, #enemy_col  do
-        collider:remove(enemy_col[i])  
+    for i = 1, #enemies  do
+        collider:remove(enemies[i].collider)  
     end
     enemies={}
-    enemy_col={}
+    -- enemy_col={}
 
     for i = 1, #bullets_col do
         collider:remove(bullets_col[i])  
@@ -164,9 +171,10 @@ function destroy_enemy_if_dead()
     for i=#enemies, 1, -1 do
         e = enemies[i]
         if e.is_dead then
-            collider:remove(enemy_col[i])
+            collider:remove(e.collider)
+            -- collider:remove(enemy_col[i])
             table.remove(enemies,i)
-            table.remove(enemy_col,i)
+            -- table.remove(enemy_col,i)
         end
     end
 end
@@ -177,7 +185,8 @@ function destroy_bullet(i)
     table.remove(bullets_col, i)
 end
 
-function checking_player_collisions()
+---------------------------------------------------------------------Checking collisions
+function checking_all_collisions()
     for other, delta in pairs(collider:collisions(player_col)) do
         local t1 = player_col.object_type
         local t2 = other.object_type
@@ -219,11 +228,17 @@ function move_to_for_bullets()
     end
 end
 
-function move_to_for_enemies()
-    for i = 1, #enemy_col  do
-        enemy_col[i]:moveTo(enemies[i].pos.x,enemies[i].pos.y)
-    end
-end
+-- function move_to_for_enemies()
+--     for i = 1, #enemy_col  do
+--         enemy_col[i]:moveTo(enemies[i].pos.x,enemies[i].pos.y)
+--     end
+-- end
+
+-- function move_to_for_enemies()
+--     for i = 1, #coins_col  do
+--         coins_col[i]:moveTo(coins[i].x,coins[i].y)
+--     end
+-- end
 
  function pipe_del()
     for i = #pipes, 1, -1 do
@@ -251,12 +266,30 @@ function set_timer(given_timer)
     end)
 
     given_timer:every(5, function()
-        local new_enemy = newEnemy()
-        local new_enemy_col=collider:circle(new_enemy.pos.x, new_enemy.pos.y,new_enemy.r)
-        table.insert(enemies, new_enemy)
-        table.insert(enemy_col, new_enemy_col)
-        new_enemy_col.object_type="enemy"
-        new_enemy_col.parent = new_enemy
+        local enemy = newEnemy(collider)
+        table.insert(enemies, enemy)
+        -- local new_enemy = newEnemy()
+        -- local new_enemy_col=collider:circle(new_enemy.pos.x, new_enemy.pos.y,new_enemy.r)
+        -- table.insert(enemies, new_enemy)
+        -- table.insert(enemy_col, new_enemy_col)
+        -- new_enemy_col.object_type="enemy"
+        -- new_enemy_col.parent = new_enemy
     end)
 
+end
+
+-----------------------------------------------Tween functions
+
+function move_up(object)
+    local new_pos = object.y - 130
+    tween_timer:tween(2, object, { y = new_pos }, 'in-out-sine', function()
+        move_down(object)
+    end)
+end
+
+function move_down(object)
+    local new_pos = object.y + 130
+    tween_timer:tween(2, object, { y = new_pos }, 'in-out-sine', function()
+        move_up(object)
+    end)
 end
