@@ -11,8 +11,8 @@ local HC = require "hc"
 
 local collider = HC.new()
 local player_col 
-local pipe_up_col = {}
-local pipe_down_col = {}
+-- local pipe_up_col = {}
+-- local pipe_down_col = {}
 local bullets_col = {}
 -- local enemy_col = {}
 local coins_col = {}
@@ -69,7 +69,7 @@ function love.update(dt)
         player_col:moveTo(player.pos.x, player.pos.y)
         move_to_for_bullets()
         -- move_to_for_enemies()
-        move_to_for_pipes()
+        -- move_to_for_pipes()
         checking_all_collisions()
         player_out_of_boundaries()
         bullets_out_of_boundaries()
@@ -122,13 +122,13 @@ function reset_everything()
     player.vel=Vector(0,0)
     collider:remove(player_col)
 
-    for i = 1, #pipe_up_col  do
-        collider:remove(pipe_up_col[i])
-        collider:remove(pipe_down_col[i])  
+    for i = 1, #pipes  do
+        collider:remove(pipes[i].collider1)
+        collider:remove(pipes[i].collider2)  
     end
     pipes={}
-    pipe_up_col={}
-    pipe_down_col={}
+    -- pipe_up_col={}
+    -- pipe_down_col={}
 
     for i = 1, #enemies  do
         collider:remove(enemies[i].collider)  
@@ -215,12 +215,12 @@ function checking_all_collisions()
     end
 end
 
-function move_to_for_pipes()
-    for i = 1, #pipe_up_col  do
-        pipe_up_col[i]:moveTo(pipes[i].pos.x, pipes[i].pos.y - pipes[i].gap/2 - pipes[i].height/2)
-        pipe_down_col[i]:moveTo(pipes[i].pos.x, pipes[i].pos.y + pipes[i].gap/2 + pipes[i].height/2)
-    end
-end
+-- function move_to_for_pipes()
+--     for i = 1, #pipe_up_col  do
+--         pipe_up_col[i]:moveTo(pipes[i].pos.x, pipes[i].pos.y - pipes[i].gap/2 - pipes[i].height/2)
+--         pipe_down_col[i]:moveTo(pipes[i].pos.x, pipes[i].pos.y + pipes[i].gap/2 + pipes[i].height/2)
+--     end
+-- end
 
 function move_to_for_bullets()
     for i = 1, #bullets_col  do
@@ -243,11 +243,11 @@ end
  function pipe_del()
     for i = #pipes, 1, -1 do
         if pipes[i].pos.x < player.pos.x - 25 then
-            collider:remove(pipe_up_col[i]) 
-            collider:remove(pipe_down_col[i]) 
+            collider:remove(pipes[i].collider1) 
+            collider:remove(pipes[i].collider2)  
             table.remove(pipes, i)
-            table.remove(pipe_up_col, i)
-            table.remove(pipe_down_col, i)
+            -- table.remove(pipe_up_col, i)
+            -- table.remove(pipe_down_col, i)
             score = score + 1
         end
     end
@@ -255,14 +255,14 @@ end
 
 function set_timer(given_timer)
     given_timer:every(2, function()
-        local new_pipe = newPipe()
-        local new_up_col = collider:rectangle(new_pipe.pos.x - new_pipe.width/2, new_pipe.pos.y - new_pipe.gap/2 - new_pipe.height, new_pipe.width, new_pipe.height)
-        local new_down_col = collider:rectangle(new_pipe.pos.x - new_pipe.width/2, new_pipe.pos.y + new_pipe.gap/2, new_pipe.width, new_pipe.height)
+        local new_pipe = newPipe(collider)
         table.insert(pipes, new_pipe)
-        table.insert(pipe_up_col, new_up_col)
-        table.insert(pipe_down_col, new_down_col)
-        new_up_col.object_type = "pipe"
-        new_down_col.object_type = "pipe"
+        -- local new_up_col = collider:rectangle(new_pipe.pos.x - new_pipe.width/2, new_pipe.pos.y - new_pipe.gap/2 - new_pipe.height, new_pipe.width, new_pipe.height)
+        -- local new_down_col = collider:rectangle(new_pipe.pos.x - new_pipe.width/2, new_pipe.pos.y + new_pipe.gap/2, new_pipe.width, new_pipe.height)
+        -- table.insert(pipe_up_col, new_up_col)
+        -- table.insert(pipe_down_col, new_down_col)
+        -- new_up_col.object_type = "pipe"
+        -- new_down_col.object_type = "pipe"
     end)
 
     given_timer:every(5, function()
