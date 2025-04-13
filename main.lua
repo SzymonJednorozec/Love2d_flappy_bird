@@ -4,7 +4,7 @@ local newPlayer = require "player"
 local newPipe = require "pipe"
 local newBullet = require "bullet"
 local Timer = require "timer"
-local newEnemy = require "enemy"
+local newEnemy = require "enemy_basic"
 local newCoin = require "coin"
 
 local HC = require "hc"  
@@ -82,9 +82,9 @@ function love.draw()
         love.graphics.printf("Points: " .. score,love.graphics.newFont(20),30,30,screen_width)
         --Player
         player:draw()
+        for _, p in ipairs(pipes) do p:draw() end
         for _, e in ipairs(enemies) do e:draw() end
         for _, b in ipairs(bullets) do b:draw() end
-        for _, p in ipairs(pipes) do p:draw() end
         for _, c in ipairs(coins) do c:draw() end
     end
 end
@@ -241,7 +241,7 @@ function checking_all_collisions()
 end
 
 
- function pipe_del()
+function pipe_del()
     for i = #pipes, 1, -1 do
         if pipes[i].pos.x < player.pos.x - 25 then
             collider:remove(pipes[i].collider1) 
@@ -253,7 +253,7 @@ end
 end
 
 function set_timer(given_timer)
-    given_timer:every(2, function()
+    given_timer:every(3, function()
         local new_pipe = newPipe(collider)
         table.insert(pipes, new_pipe)
     end)

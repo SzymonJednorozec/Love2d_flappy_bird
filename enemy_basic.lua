@@ -1,8 +1,28 @@
+local love = require "love"
 local Vector = require "vector"
+
+local function random_pose()
+    local side = love.math.random(2,4)  --for now they will not spawn over the player
+    local x,y = 0,0
+    if side == 1 then --up
+        x = love.math.random(0-100,screen_width+100)
+        y = -100
+    elseif side == 2 then --down
+        x = love.math.random(0-100,screen_width+100)
+        y = screen_height + 100
+    elseif side == 3 then --left
+        x = -100
+        y = love.math.random(0-100,screen_height+100)
+    elseif side == 4 then --right
+        x = screen_width+100
+        y = love.math.random(0-100,screen_height+100)
+    end
+    return x,y
+end
 
 local function new(collider)
     local enemy = {
-        pos = Vector(1500, 400),
+        pos = Vector(random_pose()),
         vel = Vector(0, 0),
         r = 30,
         acceleration = 10,
@@ -15,9 +35,8 @@ local function new(collider)
         knockback_decay = 0.9,
     }
 
-    -- Dodaj collider i przypisz do enemy
     enemy.collider = collider:circle(enemy.pos.x, enemy.pos.y, enemy.r)
-    enemy.collider.object_type = "enemy" -- przydatne przy kolizjach
+    enemy.collider.object_type = "enemy" 
     enemy.collider.parent = enemy
 
     -- Metody
@@ -34,7 +53,7 @@ local function new(collider)
         end
 
         self.pos = self.pos + self.vel * dt
-        self.collider:moveTo(self.pos.x, self.pos.y) -- aktualizuj pozycję collidera
+        self.collider:moveTo(self.pos.x, self.pos.y)
     end
 
     enemy.draw = function(self)
