@@ -1,3 +1,5 @@
+utils = require "utils"
+SFX = require "SFX"
 local love = require "love"
 local Vector = require "vector"
 local newPlayer = require "player"
@@ -5,7 +7,12 @@ local newPipe = require "pipe"
 local newBullet = require "bullet"
 local Timer = require "timer"
 local newEnemy = require "enemy_basic"
+local newSpecialEnemy = require "enemy_special"
+local newImmortal = require "enemy_immortal"
 local newCoin = require "coin"
+local particles = require "particles"
+
+local Menu = require "menu"
 
 local HC = require "hc"  
 
@@ -21,15 +28,20 @@ local player
 local enemies={}
 local coins={}
 local score=0
+local level = 7
+local lvl = 1
 
+local background = utils.loadSprite("sprites/background_ai_image.png")
+
+local is_immortal_spawned = false
 
 local mouse 
 
 local game = {
     state = {
-        menu=false,
+        menu=true,
         paused=false,
-        running=true,
+        running=false,
         ended=false
     }
 }
@@ -40,6 +52,7 @@ function love.load()
     player_col = collider:circle(player.pos.x, player.pos.y, player.r)
     player_col.object_type="player"
     set_timer(pipe_timer)
+    particles.load()
 end
 
 -------------------------------------------------update
@@ -59,29 +72,38 @@ function love.update(dt)
         for _, e in ipairs(enemies) do e:move(player.pos,dt) end
         for _, b in ipairs(bullets) do b:move(dt) end
         for _, c in ipairs(coins) do c:move(dt) end
-
+        --level
+        menaging_lv()
         --colliders
         player_col:moveTo(player.pos.x, player.pos.y)
         checking_all_collisions()
         player_out_of_boundaries()
         bullets_out_of_boundaries()
         destroy_enemy_if_dead()
-        
     end
+    particles.update(dt)
 
 end
 -------------------------------------------------draw
 function love.draw()
     --ended
     if game.state.ended then
-        love.graphics.printf("Game Over",love.graphics.newFont(40),screen_width/2-150,screen_height/2-100,screen_width)
-        love.graphics.printf("Press enter to restart",love.graphics.newFont(20),screen_width/2-140,screen_height/2,screen_width)
+        Menu.drawGameover()
+    end
+
+    if game.state.menu then
+        Menu.drawMenu(background)
     end
     --running
     if game.state.running then
+        love.graphics.setColor(0.5, 0.5, 0.5)
+        love.graphics.draw(background.image,0,0,0,screen_width/background.width,screen_height/background.height)
         love.graphics.printf("Points: " .. score,love.graphics.newFont(20),30,30,screen_width)
+        love.graphics.printf("lvl: " .. lvl,love.graphics.newFont(20),230,30,screen_width)
+        love.graphics.printf("level: " .. level,love.graphics.newFont(20),430,30,screen_width)
         --Player
         player:draw()
+        particles.draw()
         for _, p in ipairs(pipes) do p:draw() end
         for _, e in ipairs(enemies) do e:draw() end
         for _, b in ipairs(bullets) do b:draw() end
@@ -91,16 +113,26 @@ end
 -----------------------------------------------functions
 
 function love.keypressed(key, scancode, isrepeat)
-    if key == "space" then
-        player.jump=true
-        local new_bullet = newBullet(collider,player.pos:clone(),(mouse - player.pos):normalized())
-        table.insert(bullets,new_bullet)
+    if game.state.running then
+        if key == "space" then
+            SFX.play("shoot")
+            player.jump=true
+            local new_bullet = newBullet(collider,player.pos:clone(),(mouse - player.pos):normalized())
+            table.insert(bullets,new_bullet)
+        end
     end
-    if key == "right" then
-        game.state.running=true
-        game.state.ended=false
-        game.state.menu=false
-        reset_everything()
+    -- if game.state.ended then
+    --     if key == "space" then
+    --         game.state.ended=false
+    --         game.state.menu=true
+    --     end
+    -- end
+    if game.state.menu then
+        if key == "space" then
+            game.state.running=true
+            game.state.menu=false
+            reset_everything()
+        end
     end
  end
 
@@ -108,10 +140,11 @@ function love.keypressed(key, scancode, isrepeat)
 function reset_everything()
 
     player.pos=Vector(400,400)
-    player.vel=Vector(0,0)
+    player.vel=Vector(0,-300)
     collider:remove(player_col)
 
     for i = 1, #pipes  do
+        pipes[i].destroyed=true
         collider:remove(pipes[i].collider1)
         collider:remove(pipes[i].collider2)  
     end
@@ -128,11 +161,15 @@ function reset_everything()
     bullets={}
 
     for i = 1, #coins do
+        coins[i].destroyed=true
         collider:remove(coins[i].collider)  
     end
     coins={}
 
     score=0
+    level=1
+    lvl=1
+    is_immortal_spawned = false
 
     player_col = collider:circle(player.pos.x, player.pos.y, player.r)
     player_col.object_type="player"
@@ -143,8 +180,7 @@ end
 
 function player_out_of_boundaries()
     if player.pos.x<0 or player.pos.x>screen_width or player.pos.y<0 or player.pos.y>screen_height then
-        game.state.running=false
-        game.state.ended=true
+        playerd_dead()
     end
 end
 
@@ -167,12 +203,16 @@ function coins_out_of_boundaries()
 end
 
 function destroy_coin(i)
+    SFX.play("explosion1")
+    coins[i].destroyed=true
     collider:remove(coins[i].collider)
     table.remove(coins,i)
 end
 
 function pickup_coin(i)
-    score=score+5
+    SFX.play("coin")
+    score=score+coins[i].value
+    coins[i].destroyed=true
     collider:remove(coins[i].collider)
     table.remove(coins,i)
 end
@@ -181,8 +221,9 @@ function destroy_enemy_if_dead()
     for i=#enemies, 1, -1 do
         e = enemies[i]
         if e.is_dead then
-            local new_coin = newCoin(collider,e.pos)
-            move_up(new_coin)
+            particles.spawn("explode",e.pos.x,e.pos.y)
+            local new_coin = newCoin(collider,e.pos,level)
+            move_up(new_coin,2,70)
             table.insert(coins,new_coin)
             collider:remove(e.collider)
             table.remove(enemies,i)
@@ -195,6 +236,12 @@ function destroy_bullet(i)
     table.remove(bullets, i)
 end
 
+function playerd_dead()
+    SFX.play("dead")
+    game.state.running = false
+    game.state.menu = true
+end
+
 ---------------------------------------------------------------------Checking collisions
 function checking_all_collisions()
     for other, delta in pairs(collider:collisions(player_col)) do
@@ -202,8 +249,7 @@ function checking_all_collisions()
         local t2 = other.object_type
     
         if (t1 == "player" and (t2 == "pipe" or t2 == "enemy")) then
-            game.state.running = false
-            game.state.ended = true
+            playerd_dead()
         end
     end
 
@@ -243,40 +289,76 @@ end
 
 function pipe_del()
     for i = #pipes, 1, -1 do
-        if pipes[i].pos.x < player.pos.x - 25 then
+        if pipes[i].x < player.pos.x - 25 then
+            SFX.play("score")
+            pipes[i].destroyed = true
+            particles.spawn("up_pipe",pipes[i].x,pipes[i].y+pipes[i].gap/2+pipes[i].height/2)
+            particles.spawn("down_pipe",pipes[i].x,pipes[i].y-pipes[i].gap/2-pipes[i].height/2)
             collider:remove(pipes[i].collider1) 
             collider:remove(pipes[i].collider2)  
             table.remove(pipes, i)
+
             score = score + 1
+            lvl = lvl + 1
         end
     end
 end
 
+
+function spawn_enemy(number)
+    for i=1, number do
+        local enemy = newEnemy(collider,level)
+        table.insert(enemies, enemy)
+    end
+    if level>=4 and is_immortal_spawned == false then
+        local enemy = newImmortal(collider,level)
+        table.insert(enemies, enemy)
+        is_immortal_spawned=true
+    end
+end
+
+function spawn_special_enemy(number)
+    for i=1, number do
+        local enemy = newSpecialEnemy(collider,level)
+        table.insert(enemies, enemy)
+    end
+end
+
+local number_of_enemies = {1,1,1,1,1,2,2}
+local number_of_special_enemies = {0,0,1,1,2,2,2}
 function set_timer(given_timer)
     given_timer:every(3, function()
-        local new_pipe = newPipe(collider)
+        local new_pipe = newPipe(collider,level)
+        if new_pipe.is_tweening then move_up(new_pipe,1,100) end
         table.insert(pipes, new_pipe)
     end)
 
-    given_timer:every(5, function()
-        local enemy = newEnemy(collider)
-        table.insert(enemies, enemy)
+    given_timer:every(9, function()
+        spawn_enemy(number_of_enemies[level])
+        spawn_special_enemy(number_of_special_enemies[level])
     end)
 
 end
 
 -----------------------------------------------Tween functions
 
-function move_up(object)
-    local new_pos = object.y - 70
-    tween_timer:tween(2, object, { y = new_pos }, 'in-out-sine', function()
-        move_down(object)
+function move_up(object,time,offset)
+    if object.destroyed then return end
+    local new_pos = object.y - offset
+    tween_timer:tween(time, object, { y = new_pos }, 'in-out-sine', function()
+        move_down(object,time,offset)
     end)
 end
 
-function move_down(object)
-    local new_pos = object.y + 70
-    tween_timer:tween(2, object, { y = new_pos }, 'in-out-sine', function()
-        move_up(object)
+function move_down(object,time,offset)
+    if object.destroyed then return end
+    local new_pos = object.y + offset
+    tween_timer:tween(time, object, { y = new_pos }, 'in-out-sine', function()
+        move_up(object,time,offset)
     end)
+end
+
+function menaging_lv()
+    -- level = math.min(math.ceil(lvl / 25.0),7)
+    level = 7
 end
