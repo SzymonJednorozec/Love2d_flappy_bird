@@ -1,6 +1,6 @@
+local love = require "love"
 utils = require "utils"
 SFX = require "SFX"
-local love = require "love"
 local Vector = require "vector"
 local newPlayer = require "player"
 local newPipe = require "pipe"
@@ -28,6 +28,7 @@ local player
 local enemies={}
 local coins={}
 local score=0
+local highScore = 0
 local level = 7
 local lvl = 1
 
@@ -53,6 +54,7 @@ function love.load()
     player_col.object_type="player"
     set_timer(pipe_timer)
     particles.load()
+    highScore = utils.loadHighScore()
 end
 
 -------------------------------------------------update
@@ -101,6 +103,7 @@ function love.draw()
         love.graphics.printf("Points: " .. score,love.graphics.newFont(20),30,30,screen_width)
         love.graphics.printf("lvl: " .. lvl,love.graphics.newFont(20),230,30,screen_width)
         love.graphics.printf("level: " .. level,love.graphics.newFont(20),430,30,screen_width)
+        love.graphics.printf("highscore: " .. highScore,love.graphics.newFont(20),630,30,screen_width)
         --Player
         player:draw()
         particles.draw()
@@ -166,6 +169,10 @@ function reset_everything()
     end
     coins={}
 
+    if score > highScore then
+        highScore = score
+        utils.saveHighScore(highScore)
+    end
     score=0
     level=1
     lvl=1
