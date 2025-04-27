@@ -2,7 +2,7 @@ local love = require "love"
 local Vector = require "vector"
 
 local function random_pose()
-    local side = love.math.random(2,4)  --for now they will not spawn over the player
+    local side = love.math.random(2,4)  -- they will not spawn over the player
     local x,y = 0,0
     if side == 1 then --up
         x = love.math.random(0,screen_width)
@@ -44,7 +44,6 @@ local function new(collider, lvl)
     enemy.collider.object_type = "enemy" 
     enemy.collider.parent = enemy
 
-    -- Metody
     enemy.move = function(self, player_pos, dt)
         if self.knockback_time > 0 then
             self.knockback_time = self.knockback_time - dt
@@ -56,7 +55,6 @@ local function new(collider, lvl)
                 self.vel = direction * self.max_speed
             end
         end
-
         self.pos = self.pos + self.vel * dt
         self.collider:moveTo(self.pos.x, self.pos.y)
         self:dangermark_update()
@@ -64,11 +62,9 @@ local function new(collider, lvl)
 
     enemy.draw = function(self)
         love.graphics.setColor(1, 0, 0)
-        -- love.graphics.circle("fill", self.pos.x, self.pos.y, self.r)
         love.graphics.setColor(1, 1, 1)
         love.graphics.draw(self.sprite.image, self.pos.x, self.pos.y, self.angle, self.r*2.5/self.sprite.width, self.r*2.5/self.sprite.height, self.sprite.width / 2, self.sprite.height / 2)
         love.graphics.draw(self.dsprite.image, self.dangermark_pos.x, self.dangermark_pos.y, 0, self.r/self.dsprite.width, self.r*1.5/self.dsprite.height, self.dsprite.width / 2, self.dsprite.height / 2)
-        -- love.graphics.circle("fill", self.dangermark_pos.x, self.dangermark_pos.y, self.r)
     end
 
     enemy.getHit = function(self, direction, damage)
@@ -84,20 +80,17 @@ local function new(collider, lvl)
     end
 
     enemy.dangermark_update = function(self)
-        local margin = 25 -- odległość od krawędzi ekranu
+        local margin = 25
         local x, y = self.pos.x, self.pos.y
     
-        -- Jeśli wróg jest wewnątrz ekranu, chowamy wskaźnik
         if x >= 0 and x <= screen_width and y >= 0 and y <= screen_height then
             self.dangermark_pos = Vector(-300, -300)
             return
         end
     
-        -- Oblicz kierunek od środka ekranu do wroga
         local center = Vector(screen_width / 2, screen_height / 2)
         local direction = (self.pos - center):normalized()
     
-        -- Znajdź punkt przecięcia z krawędzią ekranu
         local dx, dy = direction.x, direction.y
         local px, py = center.x, center.y
     

@@ -6,7 +6,7 @@ local function new()
         vel = Vector(0, -300),
         angle = 0,
         gun_pos = Vector(pos),
-        gun_angle=0,
+        gun_angle = 0,
         r = 30,
         jumpheight = 400,
         jump = false,
@@ -32,8 +32,6 @@ local function new()
         end,
 
         draw = function(self)
-            -- love.graphics.setColor(0.3, 0.3, 0.5)
-            -- love.graphics.circle("fill", self.pos.x, self.pos.y, self.r)
             love.graphics.setColor(1, 1, 1)
             love.graphics.draw(self.sprite.image, self.pos.x, self.pos.y, self.angle, self.r*2.5/self.sprite.width, self.r*2.5/self.sprite.height, self.sprite.width / 2, self.sprite.height / 2)
             love.graphics.draw(self.gun_sprite.image, self.gun_pos.x, self.gun_pos.y, self.gun_angle + math.pi/2, self.r*1.5/self.gun_sprite.width, self.r*1.5/self.gun_sprite.height, self.gun_sprite.width / 2, self.gun_sprite.height / 2)

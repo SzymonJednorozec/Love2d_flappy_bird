@@ -1,16 +1,16 @@
 local particles = {}
-particles.effects = {}        -- bazowe efekty (np. "up_pipe", "down_pipe")
-particles.instances = {}      -- aktywne instancje w grze
+particles.effects = {}       
+particles.instances = {}      
 
-function particles.load()
+function particles.load() 
     local image = love.graphics.newImage("sprites/9_pixel.png")
 
     local up = love.graphics.newParticleSystem(image, 1000)
-    -- up:setEmissionRate(40)
+
     up:setColors(
-    255, 0, 0, 200,       -- start
-    255, 165, 0, 230,   -- środek
-    255, 255, 0, 255    -- koniec
+    255, 255, 0, 255,       
+    255, 255, 0, 255,   
+    255, 255, 0, 255    
     )
     up:setParticleLifetime(1.75)
     up:setEmissionArea("uniform", 40, 400)
@@ -19,7 +19,7 @@ function particles.load()
     up:setLinearDamping(0)
     up:setDirection(1.48)
     up:setSpread(0.08)
-    up:setSizes(1.0, 1.0, 0.1)
+    up:setSizes(1.0, 1.0, 0.3)
     up:setSizeVariation(0.0)
     up:setSpin(1.0)
     up:setTangentialAcceleration(0)
@@ -34,29 +34,21 @@ function particles.load()
     local explode = love.graphics.newParticleSystem(image, 1000)
 
     explode:setColors(
-    255, 0, 0, 255,       -- start
-    255, 165, 0, 255,   -- środek
-    255, 255, 0, 255    -- koniec
+    255, 0, 0, 255,      
+    255, 165, 0, 255,   
+    255, 255, 0, 255    
     )
-    -- Spawn Parameters
+
     explode:setEmissionRate(0.00)
     explode:setParticleLifetime(0.2)
     explode:setEmissionArea("uniform", 5.00, 5.00)
-
-    -- Velocity Parameters
     explode:setSpeed(110.00)
     explode:setRadialAcceleration(0, 120.00)
     explode:setLinearDamping(0.00)
-
-    -- Direction Parameters
     explode:setDirection(0.73)
     explode:setSpread(6.28)
-
-    -- Size Parameters
     explode:setSizes(1.00, 3.00, 0.10)
     explode:setSizeVariation(0.00)
-
-    -- Rotation Parameters
     explode:setSpin(1.00)
     explode:setTangentialAcceleration(0.00)
 
@@ -69,8 +61,7 @@ function particles.spawn(name, x, y)
 
     local p = base:clone()
     p:setPosition(x, y)
-    p:emit(1000) -- emituj jednorazowo N cząsteczek
-
+    p:emit(1000)
     table.insert(particles.instances, p)
 end
 
@@ -85,7 +76,6 @@ function particles.update(dt)
     end
 end
 
--- 🖼️ Rysuje wszystkie instancje
 function particles.draw()
     for _, p in ipairs(particles.instances) do
         love.graphics.draw(p)

@@ -49,6 +49,7 @@ local game = {
 
 -------------------------------------------------load
 function love.load()
+    screen_width, screen_height = love.graphics.getDimensions()
     player = newPlayer()
     player_col = collider:circle(player.pos.x, player.pos.y, player.r)
     player_col.object_type="player"
@@ -67,11 +68,13 @@ function love.update(dt)
         for _,p in ipairs(pipes) do p:move(dt) end
         pipe_del()
         --Player
+        checking_highscore()
         local mx, my = love.mouse.getPosition()
         mouse = Vector(mx,my)
         player:move(mouse,dt)
         --enemies bullets coins
         for _, e in ipairs(enemies) do e:move(player.pos,dt) end
+        destroy_enemy_if_dead()
         for _, b in ipairs(bullets) do b:move(dt) end
         for _, c in ipairs(coins) do c:move(dt) end
         --level
@@ -81,18 +84,13 @@ function love.update(dt)
         checking_all_collisions()
         player_out_of_boundaries()
         bullets_out_of_boundaries()
-        destroy_enemy_if_dead()
     end
     particles.update(dt)
 
 end
 -------------------------------------------------draw
 function love.draw()
-    --ended
-    if game.state.ended then
-        Menu.drawGameover()
-    end
-
+    --menu
     if game.state.menu then
         Menu.drawMenu(background)
     end
@@ -104,7 +102,6 @@ function love.draw()
         love.graphics.printf("lvl: " .. lvl,love.graphics.newFont(20),230,30,screen_width)
         love.graphics.printf("level: " .. level,love.graphics.newFont(20),430,30,screen_width)
         love.graphics.printf("highscore: " .. highScore,love.graphics.newFont(20),630,30,screen_width)
-        --Player
         player:draw()
         particles.draw()
         for _, p in ipairs(pipes) do p:draw() end
@@ -124,17 +121,13 @@ function love.keypressed(key, scancode, isrepeat)
             table.insert(bullets,new_bullet)
         end
     end
-    -- if game.state.ended then
-    --     if key == "space" then
-    --         game.state.ended=false
-    --         game.state.menu=true
-    --     end
-    -- end
     if game.state.menu then
+        Menu.keypressed(key)
         if key == "space" then
             game.state.running=true
             game.state.menu=false
             reset_everything()
+            Menu.gamerunning()
         end
     end
  end
@@ -169,10 +162,6 @@ function reset_everything()
     end
     coins={}
 
-    if score > highScore then
-        highScore = score
-        utils.saveHighScore(highScore)
-    end
     score=0
     level=1
     lvl=1
@@ -187,7 +176,7 @@ end
 
 function player_out_of_boundaries()
     if player.pos.x<0 or player.pos.x>screen_width or player.pos.y<0 or player.pos.y>screen_height then
-        playerd_dead()
+        player_dead()
     end
 end
 
@@ -243,10 +232,18 @@ function destroy_bullet(i)
     table.remove(bullets, i)
 end
 
-function playerd_dead()
+function player_dead()
     SFX.play("dead")
+    Menu.menurunning()
     game.state.running = false
     game.state.menu = true
+end
+
+function checking_highscore()
+    if score > highScore then
+        highScore = score
+        utils.saveHighScore(highScore)
+    end
 end
 
 ---------------------------------------------------------------------Checking collisions
@@ -256,7 +253,7 @@ function checking_all_collisions()
         local t2 = other.object_type
     
         if (t1 == "player" and (t2 == "pipe" or t2 == "enemy")) then
-            playerd_dead()
+            player_dead()
         end
     end
 
@@ -366,6 +363,5 @@ function move_down(object,time,offset)
 end
 
 function menaging_lv()
-    -- level = math.min(math.ceil(lvl / 25.0),7)
-    level = 7
+    level = math.min(math.ceil(lvl / 25.0),7)
 end

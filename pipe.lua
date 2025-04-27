@@ -31,13 +31,9 @@ local function new(collider,lvl)
     end
 
     pipe.draw = function(self)
-        love.graphics.setColor(0.1, 0.3, 0.3)
         love.graphics.setColor(1, 1, 1)
-        -- love.graphics.rectangle("fill", self.x - self.width/2, self.y + self.gap/2, self.width, self.height)
-        -- love.graphics.rectangle("fill", self.x - self.width/2, self.y - self.gap/2 - self.height, self.width, self.height)
         love.graphics.draw(self.sprite.image,self.x, self.y + self.gap/2 + self.height/2,0,self.width/self.sprite.width,self.height/self.sprite.height,self.sprite.width / 2, self.sprite.height / 2)
         love.graphics.draw(self.sprite.image,self.x, self.y - self.gap/2 - self.height/2,math.pi,self.width/self.sprite.width,self.height/self.sprite.height,self.sprite.width / 2, self.sprite.height / 2)
-        --love.graphics.circle("fill", self.x, self.y, self.r)
     end
             
         

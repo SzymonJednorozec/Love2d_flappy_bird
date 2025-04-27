@@ -1,5 +1,4 @@
 local love = require "love"
-local bitser = require "bitser"
 
 local utils = {}
 
@@ -18,13 +17,11 @@ function utils.saveHighScore(score)
 end
 
 function utils.loadHighScore()
-    local info = love.filesystem.getInfo("highscore.dat")
-    if info and info.size > 0 then
+    if love.filesystem.getInfo("highscore.dat") then
         local data = love.filesystem.read("highscore.dat")
-        return tonumber(data) or 0      -- poprawny zapis
-    else
-        return 0                         -- brak pliku lub pusty
+        return tonumber(data)
     end
+    return 0
 end
 
 

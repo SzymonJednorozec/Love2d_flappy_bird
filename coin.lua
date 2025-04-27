@@ -22,8 +22,6 @@ local function new(collider,enemy_pos,lvl)
     end
 
     coin.draw = function(self)
-        -- love.graphics.setColor(0, 1, 0)
-        -- love.graphics.circle("fill", self.x, self.y, self.r)
         love.graphics.setColor(1, 1, 1)
         love.graphics.draw(self.sprite.image, self.x, self.y, 0, self.r*2/self.sprite.width, self.r*2/self.sprite.height, self.sprite.width / 2, self.sprite.height / 2)
     end
